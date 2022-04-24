@@ -1,6 +1,6 @@
-/* eslint-disable linebreak-style */
-
 import React from 'react';
+
+import graphQLFetch from './graphQLFetch.js';
 import NumInput from './NumInput.jsx';
 import TextInput from './TextInput.jsx';
 
@@ -8,7 +8,8 @@ export default class ProductEdit extends React.Component {
   constructor() {
     super();
     this.state = {
-      product: [],
+      product: {},
+      isLoading: true,
     };
     this.onChange = this.onChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -29,6 +30,7 @@ export default class ProductEdit extends React.Component {
   onChange(event, naturalValue) {
     const { name, value: textValue } = event.target;
     const value = naturalValue === undefined ? textValue : naturalValue;
+
     this.setState(prevState => ({
       product: { ...prevState.product, [name]: value },
     }));
@@ -37,54 +39,68 @@ export default class ProductEdit extends React.Component {
   async handleSubmit(e) {
     e.preventDefault();
     const { product } = this.state;
-    const { id, ...changes } = product;
-    const variables = { id, changes };
-    const query = `mutation productUpdate($id: Int!, $changes: productUpdateInputs!) {  
-      productUpdate(id: $id, changes: $changes) {    
-        id Name Price Image Category  
-      } 
+
+    const query = `mutation productUpdate(
+      $id: Int!
+      $changes: ProductUpdateInputs!
+    ) {
+      productUpdate(
+        id: $id
+        changes: $changes
+      ) {
+        id name category price imageUrl
+      }
     }`;
 
-    await fetch(window.ENV.UI_API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    });
-
-    this.loadData();
+    const { id, ...changes } = product;
+    const data = await graphQLFetch(query, { id, changes });
+    if (data) {
+      this.setState({ product: data.productUpdate });
+      alert('Updated product successfully'); // eslint-disable-line no-alert
+    }
   }
 
   async loadData() {
-    const { match: { params: { id } } } = this.props;
-    const query = `query product($id: Int!){
-      product (id: $id) {
-        id Name Price Image Category
+    const query = `query product($id: Int!) {
+      product(id: $id) {
+        id name category price imageUrl
       }
     }`;
 
-    const variables = { id };
-    const response = await fetch(window.ENV.UI_API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    });
-    const result = await response.json();
-
-    this.setState({ product: result.data.product });
+    const { match: { params: { id } } } = this.props;
+    const data = await graphQLFetch(query, { id: parseInt(id, 10) });
+    if (data) {
+      const { product } = data;
+      product.name = product.name != null ? product.name : '';
+      product.category = product.category != null ? product.category : '';
+      product.price = product.price != null ? product.price : '';
+      product.imageUrl = product.imageUrl != null ? product.imageUrl : '';
+      this.setState({ product, isLoading: false });
+    } else {
+      this.setState({ product: {}, isLoading: false });
+    }
   }
 
   render() {
-    const { product: { id } } = this.state;
+    const { product: { id }, isLoading } = this.state;
     const { match: { params: { id: propsId } } } = this.props;
     if (id == null) {
-      if (propsId != null) {
-        return <h3>{`product with ID ${propsId} not found.`}</h3>;
+      if (isLoading) {
+        return <h3>Loading Product details...</h3>;
       }
+
+      if (propsId != null) {
+        return <h3>{`Product with ID ${propsId} not found.`}</h3>;
+      }
+
       return null;
     }
 
-    const { product: { Name, Price } } = this.state;
-    const { product: { Image, Category } } = this.state;
+    const {
+      product: {
+        name, category, price, imageUrl,
+      },
+    } = this.state;
 
     return (
       <form onSubmit={this.handleSubmit}>
@@ -92,40 +108,54 @@ export default class ProductEdit extends React.Component {
         <table>
           <tbody>
             <tr>
-              <td>Name:</td>
+              <td>Name</td>
               <td>
-                <TextInput name="Name" value={Name} onChange={this.onChange} key={id} />
+                <TextInput
+                  name="name"
+                  value={name}
+                  onChange={this.onChange}
+                  key={id}
+                />
               </td>
             </tr>
             <tr>
-              <td>Price:</td>
+              <td>Category</td>
               <td>
-                <NumInput name="Price" value={Price} onChange={this.onChange} key={id} />
-              </td>
-            </tr>
-            <tr>
-              <td>Image:</td>
-              <td>
-                <TextInput name="Image" value={Image} onChange={this.onChange} key={id} />
-              </td>
-            </tr>
-            <tr>
-              <td>Category:</td>
-              <td>
-                <select name="Category" value={Category} onChange={this.onChange}>
-                  <option value="shirt">Shirts</option>
-                  <option value="jeans">Jeans</option>
-                  <option value="jacket">Jackets</option>
-                  <option value="sweater">Sweaters</option>
-                  <option value="accessories">Accessories</option>
+                <select name="category" value={category} onChange={this.onChange}>
+                  <option value="Shirts">Shirts</option>
+                  <option value="Jeans">Jeans</option>
+                  <option value="Jackets">Jackets</option>
+                  <option value="Sweaters">Sweaters</option>
+                  <option value="Accessories">Accessories</option>
                 </select>
               </td>
             </tr>
             <tr>
-              <td />
+              <td>Price</td>
               <td>
-                <button type="submit">Submit</button>
+                <NumInput
+                  name="price"
+                  value={price}
+                  onChange={this.onChange}
+                  key={id}
+                  isDecimal
+                />
               </td>
+            </tr>
+            <tr>
+              <td>Image Url</td>
+              <td>
+                <TextInput
+                  name="imageUrl"
+                  value={imageUrl}
+                  onChange={this.onChange}
+                  key={id}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td />
+              <td><button type="submit">Submit</button></td>
             </tr>
           </tbody>
         </table>

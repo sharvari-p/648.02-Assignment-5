@@ -1,25 +1,29 @@
-/* eslint-disable linebreak-style */
-
-const { ApolloServer } = require('apollo-server-express');
 const fs = require('fs');
+require('dotenv').config();
+const { ApolloServer } = require('apollo-server-express');
 
-const product = require('./product.js');
+const Product = require('./product.js');
 
 const resolvers = {
   Query: {
-    productList: product.productList,
-    product: product.getProduct,
+    productList: Product.list,
+    product: Product.get,
   },
   Mutation: {
-    productAdd: product.productAdd,
-    productUpdate: product.productUpdate,
-    productDelete: product.remove,
+    addProduct: Product.add,
+    productUpdate: Product.update,
+    productDelete: Product.delete,
   },
 };
 
+/* Initial Server setup */
 const server = new ApolloServer({
   typeDefs: fs.readFileSync('schema.graphql', 'utf-8'),
   resolvers,
+  formatError: (error) => {
+    console.log(error);
+    return error;
+  },
 });
 
 function installHandler(app) {

@@ -1,24 +1,36 @@
-/* eslint-disable linebreak-style */
-
-const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const { MongoClient } = require('mongodb');
 
 let db;
-const url = process.env.DB_URL || 'mongodb+srv://fr22:fr22@cluster0.y5qo8.mongodb.net/inventory?retryWrites=true&w=majority';
+const url = process.env.DB_URL
+  || 'mongodb+srv://fr22:fr22@cluster0.y5qo8.mongodb.net/test?retryWrites=true&w=majority';
 
+/**
+ * Connects to the databse and sets the 'db' variable to the mongo client db.
+ */
 async function connectToDb() {
-  const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+  const client = new MongoClient(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
   await client.connect();
   console.log('Connected to MongoDB at', url);
   db = client.db();
 }
 
+/**
+ * Increments the current counter of the specific collection by 1.
+ * @param {string} name Name of the collection for which the counter is needed
+ * @returns Next id number in the sequence
+ */
 async function getNextSequence(name) {
-  const result = await db.collection('counters').findOneAndUpdate(
-    { _id: name },
-    { $inc: { current: 1 } },
-    { returnOriginal: false },
-  );
+  const result = await db
+    .collection('counters')
+    .findOneAndUpdate(
+      { _id: name },
+      { $inc: { current: 1 } },
+      { returnOriginal: false },
+    );
   return result.value.current;
 }
 

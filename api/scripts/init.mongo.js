@@ -1,18 +1,35 @@
-/* eslint linebreak-style: ["error", "windows"] */
 /* global db print */
 /* eslint no-restricted-globals: "off" */
 
-db.items.remove({});
+db.products.remove({});
 db.deleted_products.remove({});
-const count = db.items.count();
-print('Inserted ', count, ' records');
 
-db.counters.remove({ _id: 'items' });
-db.counters.insert({ _id: 'items', current: count });
+const initialProducts = [
+  {
+    id: 1,
+    name: "Puma",
+    category: 'Jeans',
+    price: '90',
+    imageUrl: 'https://picsum.photos/500/500',
+  },
+  {
+    id: 2,
+    name: 'Addidas',
+    category: 'Shirts',
+    price: '125',
+    imageUrl: 'https://picsum.photos/500/500',
+  },
+];
 
-db.items.createIndex({ id: 1 }, { unique: true });
-db.items.createIndex({ Name: 1 });
-db.items.createIndex({ Price: 1 });
-db.items.createIndex({ Image: 1 });
+db.products.insertMany(initialProducts);
+const count = db.products.count();
+print('Inserted total of ', count, 'products');
 
-db.deleted_issues.createIndex({ id: 1 }, { unique: true });
+db.counters.remove({ _id: 'products' });
+db.counters.insert({ _id: 'products', current: count });
+
+db.products.createIndex({ id: 1 }, { unique: true });
+db.products.createIndex({ name: 1 });
+db.products.createIndex({ price: 1 });
+db.products.createIndex({ category: 1 });
+db.deleted_products.createIndex({ id: 1 }, { unique: true });

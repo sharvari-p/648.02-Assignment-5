@@ -1,45 +1,69 @@
-/* eslint linebreak-style: ["error","windows"] */
-
 import React from 'react';
-import { Link, withRouter } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-const ProductRow = withRouter(({ product, deleteProduct, index }) => (
-  <tr>
-    <td>{product.Name}</td>
-    <td>
-      $
-      {product.Price}
-    </td>
-    <td>{product.Category}</td>
-    <td><Link to={`/img/${product.Image}`}>View</Link></td>
-    <td><Link to={`/edit/${product.id}`}>Edit</Link></td>
-    <td><button type="button" onClick={() => { deleteProduct(index); }}>Delete</button></td>
-  </tr>
-));
+const NO_DATA_AVAILABLE = 'No Data Available';
 
-export default function ProductTable({ products, deleteProduct }) {
-  const productRows = products.map(product => (
-    <ProductRow
-      key={product.id}
-      product={product}
-      deleteProduct={deleteProduct}
-      index={product.id}
-    />
-  ));
+/**
+ * Renders a single Row in the Product table
+ * @param props Expects props as a 'product' object which contains
+ * name, price, category and imageUrl.
+ */
+function ProductTableRow({ product, deleteProduct, index }) {
+  const {
+    name, price, category, imageUrl, id,
+  } = product;
   return (
-    <table className="borderedTable">
-      <thead>
+    <tr>
+      <td>{name || NO_DATA_AVAILABLE}</td>
+      <td>{price ? `$${price}` : NO_DATA_AVAILABLE}</td>
+      <td>{category}</td>
+      <td>{imageUrl ? <Link to={`/img/${id}`}>View</Link> : NO_DATA_AVAILABLE}</td>
+      <td>
+        <Link to={`/edit/${id}`}>Edit</Link>
+        {' | '}
+        <button type="button" onClick={() => { deleteProduct(index); }}>
+          Delete
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/**
+* Renders the Product Table
+* @param props Expects 'headings' and 'products' array as props
+*/
+export default function ProductTable({
+  headings, products, loading, deleteProduct,
+}) {
+  const productTableRows = products.map(
+    (product, index) => (
+      <ProductTableRow
+        key={product.id}
+        product={product}
+        deleteProduct={deleteProduct}
+        index={index}
+      />
+    ),
+  );
+  const initialTableMessage = loading ? 'Loading products...' : 'No Products added yet';
+
+  return (
+    <table className="table">
+      <thead className="text-left bordered-table">
         <tr>
-          <th>Product Name</th>
-          <th>Price</th>
-          <th>Category</th>
-          <th>Image</th>
-          <th>Edit</th>
-          <th>Delete</th>
+          {headings.map((heading, index) =>
+            // using index as keys as Table Headings will not change dynamically
+            // eslint-disable-next-line implicit-arrow-linebreak, react/no-array-index-key
+            <th key={index}>{heading}</th>)}
+          <th>Action</th>
         </tr>
       </thead>
+
       <tbody>
-        {productRows}
+        {products.length > 0 ? productTableRows : (
+          <tr className="text-center"><td colSpan="5">{initialTableMessage}</td></tr>
+        )}
       </tbody>
     </table>
   );

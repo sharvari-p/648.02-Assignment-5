@@ -1,5 +1,3 @@
-/* eslint linebreak-style: ["error","windows"] */
-
 import React from 'react';
 
 function format(text) {
@@ -32,7 +30,10 @@ export default class TextInput extends React.Component {
     const { value } = this.state;
     const { tag = 'input', ...props } = this.props;
     return React.createElement(tag, {
-      ...props, value, onBlur: this.onBlur, onChange: this.onChange,
+      ...props,
+      value,
+      onBlur: this.onBlur,
+      onChange: this.onChange,
     });
   }
 }

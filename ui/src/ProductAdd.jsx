@@ -1,76 +1,91 @@
-/* eslint linebreak-style: ["error","windows"] */
-
 import React from 'react';
 
-export default class AddProduct extends React.Component {
+/**
+ * Product Add Form.
+ * Expects 'addProduct' function as a prop.
+ * Uses a controlled state for 'Price' input element for adding '$'.
+ * And for rest of the elements, it uses native 'forms' object from DOM.
+ */
+export default class ProductAdd extends React.Component {
   constructor() {
     super();
+    this.state = {
+      price: '$',
+    };
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handlePriceChange = this.handlePriceChange.bind(this);
   }
 
-  handleSubmit(e) {
-    e.preventDefault();
-    const form = document.forms.productAddForm;
+  handleSubmit(event) {
+    event.preventDefault();
+
+    const {
+      name, price, category, imageUrl,
+    } = document.forms.productAdd;
+    const priceWithoutDollar = price.value.substring(1); // Getting value without '$'
+
     const product = {
-      Name: form.product.value,
-      Price: form.price.value.slice(1),
-      Category: form.category.value,
-      Image: form.image.value,
+      name: name.value,
+      price: parseFloat(priceWithoutDollar),
+      category: category.value,
+      imageUrl: imageUrl.value,
     };
-    const { createProduct } = this.props;
-    createProduct(product);
-    form.price.value = '$';
-    form.product.value = '';
-    form.image.value = '';
+    const { addProduct } = this.props;
+    addProduct(product);
+
+    // Resetting the Form to initial value
+    name.value = '';
+    category.value = 'Shirts';
+    imageUrl.value = '';
+    this.setState({ price: '$' });
+  }
+
+  handlePriceChange(event) {
+    const priceWithoutDollar = event.target.value.substring(1); // Getting value without '$'
+    this.setState({ price: `$${priceWithoutDollar}` });
   }
 
   render() {
+    const { price } = this.state;
     return (
-      <div>
-        <form name="productAddForm" className="formAdd" onSubmit={this.handleSubmit}>
-          <div>
-            <p>
-              <label htmlFor="category">
-                Category
-                <br />
-                <select id="prdCat" name="category">
-                  <option value="shirt">Shirts</option>
-                  <option value="jeans">Jeans</option>
-                  <option value="jacket">Jackets</option>
-                  <option value="sweater">Sweaters</option>
-                  <option value="accessories">Accessories</option>
-                </select>
-              </label>
-            </p>
-            <p>
-              <label htmlFor="price">
-                Price Per Unit
-                <br />
-                <input type="text" name="price" defaultValue="$" />
-              </label>
-            </p>
-            <p>
-              <input type="submit" id="btnAdd" value="Add Product" />
-            </p>
-          </div>
-          <div>
-            <p>
-              <label htmlFor="name">
-                Product Name
-                <br />
-                <input type="text" name="product" />
-              </label>
-            </p>
-            <p>
-              <label htmlFor="image">
-                Image URL
-                <br />
-                <input type="text" name="image" />
-              </label>
-            </p>
-          </div>
-        </form>
-      </div>
+      <form name="productAdd" onSubmit={this.handleSubmit} className="custom-form">
+        <div className="form-element">
+          <label htmlFor="category" className="label">
+            Category
+            <select name="category" className="form-element-select">
+              <option value="Shirts">Shirts</option>
+              <option value="Jeans">Jeans</option>
+              <option value="Jackets">Jackets</option>
+              <option value="Sweaters">Sweaters</option>
+              <option value="Accessories">Accessories</option>
+            </select>
+          </label>
+
+        </div>
+
+        <div className="form-element">
+          <label htmlFor="price" className="label">
+            Price Per Unit
+            <input type="text" name="price" value={price} onChange={this.handlePriceChange} className="form-element-input" />
+          </label>
+        </div>
+
+        <div className="form-element">
+          <label htmlFor="name" className="label">
+            Product Name
+            <input type="text" name="name" required className="form-element-input" />
+          </label>
+        </div>
+
+        <div className="form-element">
+          <label htmlFor="imageUrl" className="label">
+            Image URL
+            <input type="text" name="imageUrl" className="form-element-input" />
+          </label>
+        </div>
+
+        <button type="submit" className="button button-dark">Add Product</button>
+      </form>
     );
   }
 }
