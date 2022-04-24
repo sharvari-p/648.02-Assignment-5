@@ -1,70 +1,33 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { Component } from 'react'
 
-const NO_DATA_AVAILABLE = 'No Data Available';
+import ProductRow from './ProductRow.jsx'
 
-/**
- * Renders a single Row in the Product table
- * @param props Expects props as a 'product' object which contains
- * name, price, category and imageUrl.
- */
-function ProductTableRow({ product, deleteProduct, index }) {
-  const {
-    name, price, category, imageUrl, id,
-  } = product;
-  return (
-    <tr>
-      <td>{name || NO_DATA_AVAILABLE}</td>
-      <td>{price ? `$${price}` : NO_DATA_AVAILABLE}</td>
-      <td>{category}</td>
-      <td>{imageUrl ? <Link to={`/img/${id}`}>View</Link> : NO_DATA_AVAILABLE}</td>
-      <td>
-        <Link to={`/edit/${id}`}>Edit</Link>
-        {' | '}
-        <button type="button" onClick={() => { deleteProduct(index); }}>
-          Delete
-        </button>
-      </td>
-    </tr>
-  );
-}
+export default class ProductTable extends Component {
+	constructor(props) {
+		super(props);
+	}
 
-/**
-* Renders the Product Table
-* @param props Expects 'headings' and 'products' array as props
-*/
-export default function ProductTable({
-  headings, products, loading, deleteProduct,
-}) {
-  const productTableRows = products.map(
-    (product, index) => (
-      <ProductTableRow
-        key={product.id}
-        product={product}
-        deleteProduct={deleteProduct}
-        index={index}
-      />
-    ),
-  );
-  const initialTableMessage = loading ? 'Loading products...' : 'No Products added yet';
-
-  return (
-    <table className="table">
-      <thead className="text-left bordered-table">
-        <tr>
-          {headings.map((heading, index) =>
-            // using index as keys as Table Headings will not change dynamically
-            // eslint-disable-next-line implicit-arrow-linebreak, react/no-array-index-key
-            <th key={index}>{heading}</th>)}
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {products.length > 0 ? productTableRows : (
-          <tr className="text-center"><td colSpan="5">{initialTableMessage}</td></tr>
-        )}
-      </tbody>
-    </table>
-  );
+	render() {
+		const rows = this.props.products.map(p => <ProductRow product={p} key={p.id} deleteProduct={this.props.deleteProduct} />)
+		return (
+			<section>
+				<p>Showing all available products</p>
+				<hr />
+				<table>
+					<thead>
+						<tr>
+							<td>Product Name</td>
+							<td>Price</td>
+							<td>Category</td>
+							<td>Image</td>
+							<td>Actions</td>
+						</tr>
+					</thead>
+					<tbody>
+						{rows}
+					</tbody>
+				</table>
+			</ section>
+		)
+	}
 }
