@@ -1,13 +1,26 @@
 /* eslint "no-alert": "off" */
-export default function graphQLFetch(query, variables = {}) {
-  return new Promise((resolve, reject) => {
-    fetch(window.ENV.UI_API_ENDPOINT, {
+
+/**
+ * Generic function to fetch graphQL queries and mutations
+ * @param query GraphQL query to be sent in the body
+ * @param variables Query variable to be passed with the query. Defaults to {}
+ */
+export default async function graphQLFetch(query, variables = {}) {
+  try {
+    const response = await fetch(window.ENV.UI_API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables }),
-    })
-      .then((res) => res.json())
-      .then((res) => resolve(res))
-      .catch((err) => reject(err));
-  });
+    });
+    const result = await response.json();
+
+    if (result.errors) {
+      const error = result.errors[0];
+      alert('Error while quering for data - ', error);
+    }
+    return result.data;
+  } catch (e) {
+    alert(`Error in sending data to server: ${e.message}`);
+    return null;
+  }
 }

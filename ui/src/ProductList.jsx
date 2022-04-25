@@ -1,95 +1,102 @@
-import React, { Component, Fragment } from 'react'
+import React from 'react';
+import ProductTable from './ProductTable.jsx';
+import ProductAdd from './ProductAdd.jsx';
+import graphQLFetch from './graphQLFetch.js';
 
-import ProductAdd from './ProductAdd.jsx'
-import ProductTable from './ProductTable.jsx'
+const productTableHeadings = ['Product Name', 'Price', 'Category', 'Image'];
 
-import graphQLFetch from './graphQLFetch'
+/**
+ * Entry Point of our Application. Renders the whole page from here.
+ */
+export default class ProductList extends React.Component {
+  constructor() {
+    super();
+    this.state = { products: [], initialLoading: true };
+    this.addProduct = this.addProduct.bind(this);
+    this.deleteProduct = this.deleteProduct.bind(this);
+  }
 
-export default class ProductList extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			products: []
-		}
-		this.addProduct = this.addProduct.bind(this);
-		this.deleteProduct = this.deleteProduct.bind(this);
-		this.getProducts()
-	}
+  componentDidMount() {
+    this.loadData();
+  }
 
-	getProducts() {
-		const query = `
-		query {
-			productList {
-				_id
-				id
-				Category
-				Price
-				Name
-				Image
-			}
-		}
-		`;
+  async loadData() {
+    const query = `
+            query {
+                productList {
+                    id
+                    name
+                    category
+                    price
+                    imageUrl
+                }
+            }
+        `;
 
-		graphQLFetch(query)
-		.then((res) => {
-			this.setState((state, props) => {
-				state.products = res.data.productList;
-				return state;
-			})
-		})
-		.catch(err => console.error(err))
-	}
+    const data = await graphQLFetch(query);
 
-	addProduct(product) {
-		const query = `
-		mutation {
-			addProduct (
-				Category: [` + product.Category + `]
-				Name: "` + product.Name + `"
-				Price: ` + product.Price + `
-				Image: "` + product.Image + `"
-			) {
-				_id
-				id
-				Category
-				Price
-				Name
-				Image
-			}
-		}
-		`;
+    if (data) {
+      this.setState({ products: data.productList, initialLoading: false });
+    }
+  }
 
-		graphQLFetch(query)
-		.then((res) => {
-			this.setState((state, props) => {
-				state.products.push(res.data.addProduct);
-				return state;
-			})
-		})
-		.catch(err => console.error(err))
-	}
+  async addProduct(product) {
+    const query = `
+            mutation addProduct($product: ProductInputs!) {
+                addProduct(product: $product) {
+                    id
+                }
+            }
+        `;
 
-	deleteProduct(_id) {
-		const query = `mutation { deleteProduct (_id: "${_id}") }`
+    const data = await graphQLFetch(query, { product });
+    if (data) {
+      this.loadData();
+    }
+  }
 
-		graphQLFetch(query)
-		.then((res) => {
-			if (res.data.deleteProduct) {
-				alert("Deleted Successfully")
-				this.getProducts();
-			}
-		})
-		.catch(err => console.error(err))
+  async deleteProduct(index) {
+    const query = `mutation productDelete($id: Int!) {
+      productDelete(id: $id)
+    }`;
+    const { products } = this.state;
+    const { location: { pathname, search }, history } = this.props;
+    const { id } = products[index];
 
-	} 
+    const data = await graphQLFetch(query, { id });
+    if (data && data.productDelete) {
+      this.setState((prevState) => {
+        const newList = [...prevState.products];
+        if (pathname === `/products/${id}`) {
+          history.push({ pathname: '/products', search });
+        }
+        newList.splice(index, 1);
+        return { products: newList };
+      });
+    } else {
+      this.loadData();
+    }
+  }
 
-	render() {
-		return (
-			<Fragment>
-				<h2>My Company Inventory</h2>
-				<ProductTable products={this.state.products} deleteProduct={this.deleteProduct} />
-				<ProductAdd addProduct={this.addProduct} />
-			</Fragment>
-		)
-	}
+  render() {
+    const { products, initialLoading } = this.state;
+    return (
+      <React.Fragment>
+        <div className="container">
+          <h2>My Company Inventory</h2>
+          <div>Showing all available products</div>
+          <hr />
+          <ProductTable
+            headings={productTableHeadings}
+            products={products}
+            loading={initialLoading}
+            deleteProduct={this.deleteProduct}
+          />
+          <div>Add a new Product</div>
+          <hr />
+          <ProductAdd addProduct={this.addProduct} />
+        </div>
+      </React.Fragment>
+    );
+  }
 }
